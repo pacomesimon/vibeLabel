@@ -3,6 +3,13 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Pytorch model
+*.pt
+*.ts
+
+# .gradio folder
+.gradio
+
 # C extensions
 *.so
 
