@@ -1,7 +1,7 @@
 import gradio as gr
 import pandas as pd
 import os
-from .core import detect_objects_stream, set_classes_and_save_model
+from .core import detect_objects_stream, set_classes_and_save_model, refine_prompts_with_gemini
 from .utils import zip_folder
 
 # Default prompts
@@ -49,6 +49,8 @@ def create_demo():
             with gr.Row():
                 with gr.Column():
                     set_classes_button = gr.Button("Prompt Model")
+                with gr.Column():
+                    refine_btn = gr.Button("Refine prompts with Gemini")
                 with gr.Column():
                     model_status = gr.Textbox(
                         label="Status", 
@@ -116,6 +118,12 @@ def create_demo():
                 fn=cleanup_temp_model,
                 inputs=download_output,
                 outputs=None
+            )
+            
+            refine_btn.click(
+                fn=refine_prompts_with_gemini,
+                inputs=[prompts_table, output_gallery],
+                outputs=[prompts_table]
             )
             
             get_annotations_btn = gr.Button("Get Annotations")
