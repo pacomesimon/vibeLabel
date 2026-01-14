@@ -5,7 +5,8 @@ import torch
 import numpy as np
 import pandas as pd
 import json
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from PIL import Image
 from ultralytics import YOLO
 from .utils import batch_iterable
@@ -126,23 +127,19 @@ def refine_prompts_with_gemini(prompts_df, output_images):
     """
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        # If no API key is provided, we can't refine.
-        # In a real app, we might want to alert the user.
         print("Warning: GEMINI_API_KEY not found. Please set it in environment variables.")
         return prompts_df
 
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
     # Convert prompts_df to dict
-    # Each column is a class, values are prompts
     prompts_dict = prompts_df.to_dict(orient='list')
-    # Clean up NaNs which happen in Dataframes when columns have different lengths
     cleaned_prompts = {k: [v for v in l if pd.notna(v) and v != ""] for k, l in prompts_dict.items()}
 
     # Create the function declaration for Gemini
     properties = {
         k: {
-            "type": "string", 
+            "type": "STRING", 
             "description": f"A better, more descriptive prompt for the class '{k}' to improve detection accuracy."
         } for k in cleaned_prompts.keys()
     }
@@ -151,16 +148,11 @@ def refine_prompts_with_gemini(prompts_df, output_images):
         "name": "update_prompts",
         "description": "Updates the prompts for target classes based on visual feedback from previous detections.",
         "parameters": {
-            "type": "object",
+            "type": "OBJECT",
             "properties": properties,
             "required": list(cleaned_prompts.keys())
         }
     }
-
-    model = genai.GenerativeModel(
-        model_name="gemini-3-flash-preview",
-        tools=[{"function_declarations": [declaration]}]
-    )
 
     # Prepare visual context
     contents = [
@@ -173,8 +165,6 @@ def refine_prompts_with_gemini(prompts_df, output_images):
 
     if output_images:
         for item in output_images:
-            # Gradio Gallery returns a list of items. 
-            # If type='numpy', it should be a numpy array or a tuple (array, label)
             img_data = item
             if isinstance(item, (list, tuple)):
                 img_data = item[0]
@@ -188,19 +178,29 @@ def refine_prompts_with_gemini(prompts_df, output_images):
 
     # Call Gemini
     try:
-        response = model.generate_content(contents)
+        response = client.models.generate_content(
+            model="gemini-3-flash-preview", # Using a stable model name compatible with the new SDK
+            contents=contents,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(
+                    function_declarations=[declaration]
+                )],
+                tool_config=types.ToolConfig(
+                    function_calling_config=types.FunctionCallingConfig(
+                        mode="ANY",
+                        allowed_function_names=["update_prompts"]
+                    )
+                )
+            )
+        )
         
         # Extract the function call
-        call = response.candidates[0].content.parts[0].function_call
-        if call:
-            new_prompts_map = dict(call.args)
-            # Reconstruct the DataFrame
-            # Gradio Dataframe expects a format matching the headers.
-            # We'll create a single-row DataFrame with the new prompts.
-            # If the user wants multiple prompts, Gemini would have to provide a list, 
-            # but the instruction said "each parameter will be a string".
-            new_df_data = {k: [new_prompts_map.get(k, "")] for k in prompts_df.columns}
-            return pd.DataFrame(new_df_data)
+        for part in response.candidates[0].content.parts:
+            if part.function_call:
+                new_prompts_map = dict(part.function_call.args)
+                new_df_data = {k: [new_prompts_map.get(k, "")] for k in prompts_df.columns}
+                return pd.DataFrame(new_df_data)
+                
     except Exception as e:
         print(f"Error during Gemini refinement: {e}")
         return prompts_df
