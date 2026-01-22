@@ -11,7 +11,7 @@ pinned: false
 
 # VibeLabel
 
-VibeLabel is an application designed for vibe-based labeling and analysis.
+VibeLabel is an application designed for object detection.
 
 ## Getting Started
 
