@@ -9,4 +9,7 @@ if not os.path.exists(dummy_path):
 
 if __name__ == "__main__":
     demo = create_demo()
-    demo.launch(share=True)
+    demo.launch(
+        share=True,
+        debug=False
+    )
