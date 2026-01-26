@@ -75,6 +75,7 @@ def create_demo():
     
             with gr.Row():
                 batch_slider = gr.Slider(1, 8, value=2, step=1, label="Batch Size")
+                conf_slider = gr.Slider(0.0, 1.0, value=0.1, step=0.01, label="Confidence Threshold")
                 btn = gr.Button("Run Detection", variant="primary")
     
             with gr.Row():
@@ -91,7 +92,7 @@ def create_demo():
             # Event handlers
             btn.click(
                 fn=detect_objects_stream,
-                inputs=[gallery, batch_slider, model_state],
+                inputs=[gallery, batch_slider, model_state, conf_slider],
                 outputs=[output_gallery, output_table, annotations_folder_state],
             )
             

@@ -47,7 +47,7 @@ def set_classes_with_descriptions(class_description_dict):
     return local_model
 
 
-def detect_objects_stream(images, batch_size=3, model_instance=None):
+def detect_objects_stream(images, batch_size=3, model_instance=None, conf_threshold=0.1):
     """
     Run YOLO on images in batches, stream each batch's results.
     """
@@ -75,10 +75,13 @@ def detect_objects_stream(images, batch_size=3, model_instance=None):
         # Original code assumed list of tuples/list: [img[0] for img in batch]
         # We preserve this logic.
         batch_paths = [img[0] for img in batch]
-        np_batch = [Image.open(img).convert('RGB') for img in batch_paths]
+        np_batch = [
+            np.array(Image.open(img).convert('RGB'))
+            for img in batch_paths
+            ]
 
         # Run YOLO prediction
-        results = model_instance(np_batch, verbose=False, conf=0.01)
+        results = model_instance(np_batch, verbose=False, conf=conf_threshold)
 
         for res_id, res in enumerate(results):
             # Save annotation to txt
