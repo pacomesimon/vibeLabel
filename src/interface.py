@@ -34,13 +34,56 @@ def create_demo():
              except Exception as e:
                  print(f"Error removing file: {e}")
 
-    with gr.Blocks(title="VibeLabel - Multi-Modal Labeling") as demo:
+    css = """
+    .gradio-container {
+        background-image: url('https://static.vecteezy.com/system/resources/thumbnails/068/341/035/small_2x/colorful-wavy-line-abstract-background-with-gradient-neon-flow-in-purple-and-blue-on-dark-background-for-futuristic-digital-design-vector.jpg') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-attachment: fixed !important;
+    }
+    .glass-card {
+        background: rgba(15, 15, 25, 0.5) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4) !important;
+        padding: 1.5rem !important;
+        margin-bottom: 1rem !important;
+    }
+    .dark .glass-card {
+        background: rgba(10, 10, 20, 0.6) !important;
+    }
+    /* Enhance text readability on dark background */
+    .gradio-container h3, .gradio-container p, .gradio-container span {
+        text-shadow: 0px 2px 4px rgba(0,0,0,0.5) !important;
+    }
+    /* Apply glass to common blocks */
+    .gr-form, .gr-box, .gr-panel {
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    /* Button enhancements */
+    button.primary {
+        background: linear-gradient(90deg, #8a2be2 0%, #4b0082 100%) !important;
+        border: none !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+    button.primary:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 0 15px rgba(138, 43, 226, 0.6) !important;
+    }
+    """
+
+    with gr.Blocks(title="VibeLabel - Multi-Modal Labeling", theme=gr.themes.Soft(), css=css) as demo:
         model_state = gr.State([])  # Store the model as a state variable
         annotations_folder_state = gr.State([])
 
         with gr.Row():
             # --- SIDEBAR (Brain) ---
-            with gr.Column(scale=1, min_width=300):
+            with gr.Column(scale=1, min_width=300, elem_classes=["glass-card"]):
                 gr.Markdown("### 🧠 Model Configuration")
                 model_status = gr.Textbox(
                     label="Status", 
@@ -74,7 +117,7 @@ def create_demo():
                 )
 
             # --- MAIN AREA (Workspace) ---
-            with gr.Column(scale=3):
+            with gr.Column(scale=3, elem_classes=["glass-card"]):
                 gr.Markdown("### 📸 Input Sources")
                 with gr.Row():
                     with gr.Column():
