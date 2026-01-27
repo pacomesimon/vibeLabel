@@ -4,10 +4,21 @@ import os
 from .core import detect_objects_stream, set_classes_and_save_model, refine_prompts_with_gemini
 from .utils import zip_folder
 
+# Define assets path relative to this file
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+IMAGES_DIR = os.path.join(BASE_DIR, 'assets', 'images')
+
+# Default gallery images
+DEFAULT_IMAGES = []
+if os.path.exists(IMAGES_DIR):
+    # Gradio Gallery with type='filepath' expects a list of [path, label] or [(path, label)]
+    # based on the usage in core.py: batch_paths = [img[0] for img in batch]
+    DEFAULT_IMAGES = [[os.path.join(IMAGES_DIR, f), None] for f in os.listdir(IMAGES_DIR) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
 # Default prompts
 prompts_df_new = pd.DataFrame({
-    "eat": ["mouth", "nose"],
-    "see": ["eyes", "head"],
+    "damaged house": ["damaged house", "house with broken roof", "surrounded by debris after a disaster"],
+    "non damaged house": ["house", "intact building", "no visible structural damage or debris"],
 })
 
 def handle_webcam_change_event(webcam_img, gallery):
@@ -15,12 +26,15 @@ def handle_webcam_change_event(webcam_img, gallery):
     Update gallery with webcam image.
     """
     if webcam_img is None:
-        webcam_img = []
-    else:
-        webcam_img = [webcam_img]
+        return gallery
+    
+    # webcam_img is a path if gr.Image(type="filepath")
+    new_item = [webcam_img, None]
+    
     if gallery is None:
         gallery = []
-    return gallery + webcam_img
+    
+    return gallery + [new_item]
 
 def create_demo():
     
@@ -127,12 +141,14 @@ def create_demo():
                             height="300px",
                             type="filepath", 
                             columns=4,
+                            value=DEFAULT_IMAGES
                         )
                     with gr.Column():
                         webcam_img = gr.Image(
                             label="Webcam Snap",
                             sources=["webcam"],
-                            height="300px"
+                            height="300px",
+                            type="filepath"
                         )
                 
                 btn = gr.Button("🚀 Run Detection", variant="primary", size="lg")
