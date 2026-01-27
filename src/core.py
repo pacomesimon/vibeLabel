@@ -121,17 +121,19 @@ def save_model(model_instance):
 
 def set_classes_and_save_model(df):
     model_instance = set_classes_with_descriptions(df)
-    status = f'{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: Model Prompted'
+    status = f'**Status:** <span style="color: #00ffcc;">{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: Model Prompted successfully!</span>'
     return model_instance, save_model(model_instance), status
 
-def refine_prompts_with_gemini(prompts_df, output_images):
+def refine_prompts_with_gemini(prompts_df, output_images, api_key_input=None):
     """
     Refines prompts using Gemini based on previous prompts and detection results.
     """
-    api_key = os.environ.get("GEMINI_API_KEY")
+    # Prioritize user input API key, fallback to environment variable
+    api_key = api_key_input or False #os.environ.get("GEMINI_API_KEY")
+    
     if not api_key:
-        print("Warning: GEMINI_API_KEY not found. Please set it in environment variables.")
-        return prompts_df
+        status = f'**Status:** <span style="color: #ff4444;">{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: Error - No Gemini API Key provided.</span>'
+        return prompts_df, status
 
     client = genai.Client(api_key=api_key)
 
@@ -202,10 +204,13 @@ def refine_prompts_with_gemini(prompts_df, output_images):
             if part.function_call:
                 new_prompts_map = dict(part.function_call.args)
                 new_df_data = {k: [new_prompts_map.get(k, "")] for k in prompts_df.columns}
-                return pd.DataFrame(new_df_data)
+                new_df = pd.DataFrame(new_df_data)
+                status = f'**Status:** <span style="color: #00ffcc;">{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: Prompts Refined via AI</span>'
+                return new_df, status
                 
     except Exception as e:
-        print(f"Error during Gemini refinement: {e}")
-        return prompts_df
+        status = f'**Status:** <span style="color: #ff4444;">{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: Error during Gemini refinement: {str(e)}</span>'
+        return prompts_df, status
 
-    return prompts_df
+    status = f'**Status:** <span style="color: #ffbb33;">{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}: Gemini completed but no changes were made.</span>'
+    return prompts_df, status

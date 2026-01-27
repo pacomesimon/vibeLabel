@@ -99,10 +99,8 @@ def create_demo():
             # --- SIDEBAR (Brain) ---
             with gr.Column(scale=1, min_width=300, elem_classes=["glass-card"]):
                 gr.Markdown("### 🧠 Model Configuration")
-                model_status = gr.Textbox(
-                    label="Status", 
-                    value="Model Not Prompted",
-                    interactive=False
+                model_status = gr.Markdown(
+                    value="**Status:** <span style=\"color: #ffbb33;\">Model Not Prompted</span>",
                 )
                 
                 prompts_table = gr.Dataframe(
@@ -111,6 +109,12 @@ def create_demo():
                     interactive=True,
                     label="Class Names & Descriptions",
                     wrap=True
+                )
+
+                gemini_api_key = gr.Textbox(
+                    label="Gemini API Key",
+                    placeholder="Enter your API Key here...",
+                    type="password",
                 )
                 
                 with gr.Row():
@@ -187,8 +191,8 @@ def create_demo():
         
         refine_btn.click(
             fn=refine_prompts_with_gemini,
-            inputs=[prompts_table, output_gallery],
-            outputs=[prompts_table]
+            inputs=[prompts_table, output_gallery, gemini_api_key],
+            outputs=[prompts_table, model_status]
         )
 
         # Image Handling
